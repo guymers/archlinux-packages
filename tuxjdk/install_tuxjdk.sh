@@ -1,4 +1,4 @@
-THIS_JRE='java-8-openjdk-tuxjdk/jre'
+THIS_JDK='tuxjdk'
 
 fix_default() {
   if [ ! -x /usr/bin/java ]; then
@@ -12,10 +12,10 @@ fix_default() {
 post_install() {
   default=$(fix_default)
   case ${default} in
-    "")
-      /usr/bin/archlinux-java set ${THIS_JRE}
+    "" | ${THIS_JDK}/jre)
+      /usr/bin/archlinux-java set ${THIS_JDK}
       ;;
-    ${THIS_JRE} | ${THIS_JRE/\/jre})
+    ${THIS_JDK})
       # Nothing
       ;;
     *)
@@ -25,13 +25,14 @@ post_install() {
   esac
 
   if [ ! -f /etc/ssl/certs/java/cacerts ]; then
-     /usr/bin/update-ca-trust
+    /usr/bin/update-ca-trust
   fi
 }
 
 post_upgrade() {
-  if [ -z $(fix_default) ]; then
-    /usr/bin/archlinux-java set ${THIS_JRE}
+  default=$(fix_default)
+  if [ -z "${default}" -o "x${default}" = "x${THIS_JDK}/jre" ]; then
+    /usr/bin/archlinux-java set ${THIS_JDK}
   fi
 
   if [ ! -f /etc/ssl/certs/java/cacerts ]; then
@@ -40,9 +41,10 @@ post_upgrade() {
 }
 
 pre_remove() {
-  default=$(fix_default)
-  if [ "x${default/\/jre}" = "x${THIS_JRE/\/jre}" ]; then
+  if [ "x$(fix_default)" = "x${THIS_JDK}" ]; then
     /usr/bin/archlinux-java unset
-    echo "No Java environment is set as default anymore"
+    if [ -x /usr/lib/jvm/${THIS_JDK}/jre/bin/java ]; then
+      /usr/bin/archlinux-java set ${THIS_JDK}/jre
+    fi
   fi
 }

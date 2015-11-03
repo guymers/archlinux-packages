@@ -1,5 +1,6 @@
-# Based on https://www.archlinux.org/packages/extra/x86_64/jdk8-openjdk/
+# Extends https://www.archlinux.org/packages/extra/x86_64/jdk8-openjdk/
 
+# Maintainer: Sam Guymer <sam at guymer dot me>
 # Contributor: Guillaume ALAUX <guillaume@archlinux.org>
 # Contributor: Boyan Ding <stu_dby@126.com>
 
@@ -9,21 +10,23 @@
 #   add policytool desktop files
 
 # Package 'openjfx' must be updated when this one is
-pkgname=('jre8-openjdk-tuxjdk-headless' 'jre8-openjdk-tuxjdk' 'jdk8-openjdk-tuxjdk')
+pkgname=('tuxjdk' 'tuxjdk-src' 'tuxjdk-doc')
 pkgbase=java8-openjdk
 _java_ver=8
 # Found @ http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
-_jdk_update=65
-_jdk_build=17
-pkgver=${_java_ver}.u${_jdk_update}
+_jdk_update=60
+# Found @ http://hg.openjdk.java.net/jdk8u/jdk8u
+_jdk_build=24
+_tuxjdk_ver=03
+pkgver=${_java_ver}.${_jdk_update}.${_tuxjdk_ver}
 _repo_ver=jdk${_java_ver}u${_jdk_update}-b${_jdk_build}
 pkgrel=1
 arch=('i686' 'x86_64')
-url='http://openjdk.java.net/'
+url='https://github.com/tuxjdk/tuxjdk'
 license=('custom')
 makedepends=('jdk7-openjdk' 'ccache' 'cpio' 'unzip' 'zip'
              'libxrender' 'libxtst' 'fontconfig' 'libcups' 'alsa-lib'
-             'mercurial' 'quilt')
+             'quilt')
 _url_src=http://hg.openjdk.java.net/jdk8u/jdk8u
 source=(jdk8u-${_repo_ver}.tar.gz::${_url_src}/archive/${_repo_ver}.tar.gz
         corba-${_repo_ver}.tar.gz::${_url_src}/corba/archive/${_repo_ver}.tar.gz
@@ -33,27 +36,28 @@ source=(jdk8u-${_repo_ver}.tar.gz::${_url_src}/archive/${_repo_ver}.tar.gz
         jaxp-${_repo_ver}.tar.gz::${_url_src}/jaxp/archive/${_repo_ver}.tar.gz
         langtools-${_repo_ver}.tar.gz::${_url_src}/langtools/archive/${_repo_ver}.tar.gz
         nashorn-${_repo_ver}.tar.gz::${_url_src}/nashorn/archive/${_repo_ver}.tar.gz
-        tuxjdk::hg+https://code.google.com/p/tuxjdk#revision=21)
+        https://github.com/tuxjdk/tuxjdk/archive/${pkgver}.tar.gz)
 
-sha256sums=('472c8cd32a52a7f84d28439d2364696e82abd1b438fd43609c463c3727123e52'
-            '3491c94851b72c5569e76cb18706025c20dca4b9f26843f8ad0f31ca5df1e0b6'
-            '7ef89c932bb829d3a69ff827493254657cdc98724f3a16956027922b3604e82e'
-            '53782fadf27e8dac8f778016c8e6e59363556e0bc4d9f349526f7779fe9f0722'
-            'def69c47603258bdc638ce0d3bd888bb83f5dce04452e0d14284814dc75343fa'
-            '91004628ceb2b52f9a9121301ec74d3e02181787d972f06a46390184703d89ce'
-            '047b3390680fe8fb03c5d63f9582cae2216cbe1d912eff480613b051c97d29c6'
-            '64e966d7774a4134ae489992017ce791091ff57ecb0fc928d0f6c3fb82dbe510'
-            'SKIP')
+sha256sums=('97e368187b08067d57eb10bce08fb9057e63242c263f63ab7b7dd036cbf7aebf'
+            '76736786a1205367167b1abd10b6f173885f8ca8b2c3f56d5ff94b9e65a98865'
+            '9e7830631897679c97127387a1e962bfac46bafbe2b5a4be88e8bbf238e6c84c'
+            '999f0242213a4d048cee4e990d62024d277bcc8d49ab6fd807e32271fe078985'
+            '9643d8c22c4d6a680609168d84ac5a92421aa9973aea15cac687e4ccf167ff96'
+            'cb854984714541af5cba6e920958d0c68f2de52bff5acf723387fa03d63d8c3d'
+            '93a553f2e9dfc820e50bfd70f989c96cd330857849ddba23dc50246e99ab1329'
+            '518dd422df787547bbeedb57a524501548a6efd8f96443ebc59276cc7922e801'
+            '96dda1cc1dd7c09ecde611675008d2c7c4b7e847e7bd9679a2e07b2ab21d28da')
 
 case "${CARCH}" in
   'x86_64') _JARCH=amd64 ; _DOC_ARCH=x86_64 ;;
   'i686'  ) _JARCH=i386  ; _DOC_ARCH=x86    ;;
 esac
 
-_jdkname=openjdk8-tuxjdk
-_jvmdir=/usr/lib/jvm/java-8-openjdk-tuxjdk
+_jdkname=tuxjdk8
+_jvmdir=/opt/tuxjdk
 _prefix="jdk8u-${_repo_ver}/image"
 _imgdir="${_prefix}/jvm/openjdk-1.8.0_$(printf '%.2d' ${_jdk_update})"
+_tuxjdkdir="tuxjdk-${pkgver}"
 _nonheadless=(bin/policytool
               lib/${_JARCH}/libjsound.so
               lib/${_JARCH}/libjsoundalsa.so
@@ -69,14 +73,9 @@ prepare() {
     mv ../${subrepo}-${_repo_ver} ${subrepo}
   done
 
-  # https://code.google.com/p/tuxjdk/
-  sed -i '/bash$/aset -e' "${srcdir}/tuxjdk/applyTuxjdk.sh"
-  sed -i '/backport-fix-make40-build/d' "${srcdir}/tuxjdk/quilt-patches/series"
-  sed -i '/tune-default-gc/d' "${srcdir}/tuxjdk/quilt-patches/series"
-  sed -i 's/-lawt_xawt/-lawt_headless/' "${srcdir}/tuxjdk/quilt-patches/add-fontconfig-support.diff"
-
-  cd "${srcdir}/jdk8u-${_repo_ver}"
-  ../tuxjdk/applyTuxjdk.sh
+  # exit if quilt fails
+  sed -i 's/^$QUILT push -a/$QUILT push -a || exit/' "${srcdir}/${_tuxjdkdir}/applyTuxjdk.sh"
+  "${srcdir}/${_tuxjdkdir}/applyTuxjdk.sh"
 }
 
 build() {
@@ -118,7 +117,8 @@ build() {
 
   # http://icedtea.classpath.org/bugzilla/show_bug.cgi?id=1437
   find . -iname '*.jar' -exec chmod ugo+r {} \;
-  chmod ugo+r lib/ct.sym
+  # removed by tuxjdk
+  # chmod ugo+r lib/ct.sym
 
   # remove redundant *diz and *debuginfo files
   find . -iname '*.diz' -exec rm {} \;
@@ -130,30 +130,39 @@ build() {
 #  make -k check
 #}
 
-package_jre8-openjdk-tuxjdk-headless() {
-  pkgdesc='OpenJDK Java 8 headless runtime environment with tuxjdk'
-  depends=('java-runtime-common' 'ca-certificates-utils' 'nss')
-  optdepends=('java-rhino: for some JavaScript support')
-  provides=('java-runtime-headless=8' 'java-runtime-headless-openjdk=8')
+package_tuxjdk() {
+  pkgdesc='Enhanced Open Java Development Kit for developers on Linux. Contains series of patched to OpenJDK to enhance user experience with Java-based and Swing-based tools (NetBeans, Idea, Android Studio, etc)'
+  depends=('java-runtime-common' 'ca-certificates-utils' 'nss'
+           'xdg-utils' 'hicolor-icon-theme'
+           'java-environment-common')
+  optdepends=('java-rhino: for some JavaScript support'
+              'icedtea-web: web browser plugin + Java Web Start'
+              'alsa-lib: for basic sound support'
+              'gtk2: for the Gtk+ look and feel - desktop usage'
+              'java-openjfx: for JavaFX GUI components support')
+  provides=('java-runtime-headless=8' 'java-runtime-headless-openjdk=8'
+            'java-runtime=8' 'java-runtime-openjdk=8'
+            'java-environment=8' 'java-environment-openjdk=8')
   # Upstream config files that should go to etc and get backup
-  _backup_etc=(etc/java-8-openjdk/${_JARCH}/jvm.cfg
-               etc/java-8-openjdk/calendars.properties
-               etc/java-8-openjdk/content-types.properties
-               etc/java-8-openjdk/flavormap.properties
-               etc/java-8-openjdk/images/cursors/cursors.properties
-               etc/java-8-openjdk/logging.properties
-               etc/java-8-openjdk/management/jmxremote.access
-               etc/java-8-openjdk/management/jmxremote.password
-               etc/java-8-openjdk/management/management.properties
-               etc/java-8-openjdk/management/snmp.acl
-               etc/java-8-openjdk/net.properties
-               etc/java-8-openjdk/psfont.properties.ja
-               etc/java-8-openjdk/psfontj2d.properties
-               etc/java-8-openjdk/security/java.policy
-               etc/java-8-openjdk/security/java.security
-               etc/java-8-openjdk/sound.properties)
+  _backup_etc=(etc/tuxjdk/${_JARCH}/jvm.cfg
+               etc/tuxjdk/calendars.properties
+               etc/tuxjdk/content-types.properties
+               etc/tuxjdk/flavormap.properties
+               etc/tuxjdk/images/cursors/cursors.properties
+               etc/tuxjdk/logging.properties
+               etc/tuxjdk/management/jmxremote.access
+               etc/tuxjdk/management/jmxremote.password
+               etc/tuxjdk/management/management.properties
+               etc/tuxjdk/management/snmp.acl
+               etc/tuxjdk/net.properties
+               etc/tuxjdk/psfont.properties.ja
+               etc/tuxjdk/psfontj2d.properties
+               etc/tuxjdk/security/java.policy
+               etc/tuxjdk/security/java.security
+               etc/tuxjdk/sound.properties
+               etc/tuxjdk/swing.properties)
   backup=(${_backup_etc[@]})
-  install=install_jre8-openjdk-headless.sh
+  install=install_tuxjdk.sh
 
   cd "${srcdir}/${_imgdir}/jre"
 
@@ -164,10 +173,7 @@ package_jre8-openjdk-tuxjdk-headless() {
   mv "${pkgdir}${_jvmdir}"/jre/lib/management/jmxremote.password{.template,}
   mv "${pkgdir}${_jvmdir}"/jre/lib/management/snmp.acl{.template,}
 
-  # Remove 'non-headless' lib files
-  for f in ${_nonheadless[@]}; do
-    rm "${pkgdir}${_jvmdir}/jre/${f}"
-  done
+  install -m 644 "${srcdir}/${_tuxjdkdir}/default_swing.properties" "${pkgdir}${_jvmdir}/jre/lib/swing.properties"
 
   # Man pages
   pushd "${pkgdir}${_jvmdir}/jre/bin"
@@ -184,6 +190,11 @@ package_jre8-openjdk-tuxjdk-headless() {
   rm -f "${pkgdir}${_jvmdir}/jre/lib/security/cacerts"
   ln -sf /etc/ssl/certs/java/cacerts "${pkgdir}${_jvmdir}/jre/lib/security/cacerts"
 
+  # Desktop files
+  # TODO add these when switching to IcedTea
+  #install -D -m 644 "${srcdir}/icedtea-${_icedtea_ver}/policytool.desktop" \
+  #                  "${pkgdir}/usr/share/applications/policytool.desktop"
+
   # Install license
   install -d -m 755 "${pkgdir}/usr/share/licenses/${pkgbase}/"
   install -m 644 ASSEMBLY_EXCEPTION LICENSE THIRD_PARTY_README \
@@ -192,58 +203,12 @@ package_jre8-openjdk-tuxjdk-headless() {
 
   # Move config files that were set in _backup_etc from ./lib to /etc
   for file in ${_backup_etc[@]}; do
-    _filepkgpath=${_jvmdir}/jre/lib/${file#etc/java-8-openjdk/}
+    _filepkgpath=${_jvmdir}/jre/lib/${file#etc/tuxjdk/}
     install -D -m 644 "${pkgdir}${_filepkgpath}" "${pkgdir}/${file}"
     ln -sf /${file} "${pkgdir}${_filepkgpath}"
   done
-}
 
-package_jre8-openjdk-tuxjdk() {
-  pkgdesc='OpenJDK Java 8 full runtime environment with tuxjdk'
-  depends=("jre8-openjdk-tuxjdk-headless=${pkgver}-${pkgrel}" 'xdg-utils' 'hicolor-icon-theme')
-  optdepends=('icedtea-web: web browser plugin + Java Web Start'
-              'alsa-lib: for basic sound support'
-              'gtk2: for the Gtk+ look and feel - desktop usage'
-              'java-openjfx: for JavaFX GUI components support')
-  # TODO when adding IcedTea: 'giflib: for gif format support'
-  # TODO when adding IcedTea: 'libpulse: for advanced sound support'
-  provides=('java-runtime=8' 'java-runtime-openjdk=8')
-  install=install_jre8-openjdk.sh
-
-  cd "${srcdir}/${_imgdir}/jre"
-
-  # TODO? Should /usr/lib/jvm/java-8-openjdk/jre/lib/sound.properties belong to jre?
-  for f in ${_nonheadless[@]}; do
-    install -D ${f} "${pkgdir}${_jvmdir}/jre/${f}"
-  done
-
-  # Man pages
-  pushd "${pkgdir}${_jvmdir}/jre/bin"
-  install -d -m 755 "${pkgdir}"/usr/share/man/{,ja/}man1/
-  for file in *; do
-    install -m 644 "${srcdir}/${_imgdir}/man/man1/${file}.1" \
-      "${pkgdir}/usr/share/man/man1/${file}-${_jdkname}.1"
-    install -m 644 "${srcdir}/${_imgdir}/man/ja/man1/${file}.1" \
-      "${pkgdir}/usr/share/man/ja/man1/${file}-${_jdkname}.1"
-  done
-  popd
-
-  # Desktop files
-  # TODO add these when switching to IcedTea
-  #install -D -m 644 "${srcdir}/icedtea-${_icedtea_ver}/policytool.desktop" \
-  #                  "${pkgdir}/usr/share/applications/policytool.desktop"
-
-  # Install license
-  install -d -m 755 "${pkgdir}/usr/share/licenses/${pkgbase}/"
-  ln -sf /usr/share/licenses/${pkgbase} "${pkgdir}/usr/share/licenses/${pkgname}"
-}
-
-package_jdk8-openjdk-tuxjdk() {
-  pkgdesc='OpenJDK Java 8 development kit with tuxjdk'
-  depends=('java-environment-common' "jre8-openjdk-tuxjdk=${pkgver}-${pkgrel}")
-  provides=('java-environment=8' 'java-environment-openjdk=8')
-  install=install_jdk8-openjdk.sh
-
+  #--- jdk
   cd "${srcdir}/${_imgdir}"
 
   # Main files
@@ -276,8 +241,18 @@ package_jdk8-openjdk-tuxjdk() {
   # TODO add these when switching to IcedTea
   #install -m 644 "${srcdir}/icedtea-${_icedtea_ver}/jconsole.desktop" \
   #  "${pkgdir}/usr/share/applications"
+}
 
-  # link license
-  install -d -m 755 "${pkgdir}/usr/share/licenses/"
-  ln -sf /usr/share/licenses/${pkgbase} "${pkgdir}/usr/share/licenses/${pkgname}"
+package_tuxjdk-src() {
+  pkgdesc='OpenJDK Java 8 sources'
+
+  install -D "${srcdir}/${_imgdir}/src.zip" "${pkgdir}${_jvmdir}/src.zip"
+}
+
+package_tuxjdk-doc() {
+  pkgdesc='OpenJDK Java 8 documentation'
+
+  install -d -m 755 "${pkgdir}/usr/share/doc/${pkgname}/"
+  cp -r "${srcdir}"/jdk8u-${_repo_ver}/build/linux-${_DOC_ARCH}-normal-server-release/docs/* \
+    "${pkgdir}/usr/share/doc/${pkgname}/"
 }
