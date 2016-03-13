@@ -1,0 +1,26 @@
+pkgname=jsonnet
+pkgver=0.8.6
+pkgrel=1
+pkgdesc="The data templating language"
+arch=("x86_64")
+url="http://jsonnet.org"
+license=("Apache")
+makedepends=()
+source=("https://github.com/google/jsonnet/archive/v${pkgver}.tar.gz")
+sha256sums=("6548604e7800c99bb3048cddf30fcd017fd65d40cd0dddae89ec9a0f58384ee9")
+
+build() {
+  cd "${srcdir}/jsonnet-${pkgver}"
+	CXXFLAGS="$CXXFLAGS -Wall -Wextra -pedantic -std=c++0x -fPIC -Iinclude"
+	CFLAGS="$CFLAGS -Wall -Wextra -pedantic -std=c99 -fPIC -Iinclude"
+  make
+}
+
+check() {
+  cd "${srcdir}/jsonnet-${pkgver}"
+  #make test
+}
+
+package() {
+  install -D -m 755 "${srcdir}/jsonnet-${pkgver}/jsonnet" "${pkgdir}/usr/bin/jsonnet"
+}
