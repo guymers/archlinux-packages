@@ -1,0 +1,45 @@
+# Maintainer: Frederik Schwan <frederik dot schwan at linux dot com>
+# Contributor: Simon Legner <Simon.Legner@gmail.com>
+
+pkgname=bazel
+pkgver=0.2.0
+pkgrel=1
+pkgdesc="Correct, reproducible, and fast builds for everyone"
+arch=('x86_64')
+url="http://bazel.io/"
+license=('Apache')
+depends=('java-environment=8' 'libarchive' 'zip' 'unzip')
+makedepends=('git' 'protobuf')
+options=('!strip')
+source=(
+  "https://github.com/bazelbuild/bazel/archive/${pkgver}.tar.gz"
+  http-downloader-proxy-patch
+)
+sha256sums=(
+  '3685ce039e44224260a7ed5b80dd951155998a6e128b2bebe984ea1d85a674b3'
+  '8031219cd5f2115eb19040b0876de5777784aa7ecd46ca6d2478c97a2cd6928d'
+)
+
+build() {
+  cd ${pkgname}-${pkgver}
+  HOME=$srcdir
+
+  # which xzcat fails but it exists
+  sed '321,323d' -i "tools/build_defs/pkg/archive.py"
+
+  # https://github.com/bazelbuild/bazel/pull/795
+  patch -p1 < ../patch
+
+  ./compile.sh
+
+  ./output/bazel build scripts:bazel-complete.bash
+}
+
+package() {
+  install -Dm755 "${srcdir}/${pkgname}-${pkgver}/output/bazel" "${pkgdir}/usr/bin/bazel"
+  install -Dm755 "${srcdir}/${pkgname}-${pkgver}/bazel-bin/scripts/bazel-complete.bash" "${pkgdir}/etc/bash_completion.d/bazel-complete.bash"
+
+cat > "${pkgdir}/etc/bazel.bazelrc" <<-EOF
+build --python2_path=python2
+EOF
+}
